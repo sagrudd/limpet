@@ -1,0 +1,14 @@
+[package]
+name = "limpet"
+version = "0.1.11"
+edition = "2021"
+description = "A bioinformatics toolkit. First command: sample random sequences from a reference FASTA."
+license = "MIT OR Apache-2.0"
+repository = "https://example.com/limpet"
+readme = "README.md"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+rand = "0.8"
+flate2 = "1.0"

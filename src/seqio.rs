@@ -1,3 +1,15 @@
+//! Core I/O utilities used across `limpet`.
+//!
+//! Supports **FASTA** and **FASTQ** inputs (both plain text and `.gz`) and provides FASTA writing.
+//! The reader returns [`Contig`] records with both the *accession* (`name`) and the **full header**
+//! string (`header`), enabling provenance‑preserving workflows (e.g., `scramble`).
+//!
+//! ### Design notes
+//! - Input **format is auto‑detected** from the first non‑empty line (`'>'` → FASTA, `'@'` → FASTQ).
+//! - Sequences are upper‑cased ASCII (`A/C/G/T/N` etc.) and stored in memory.
+//! - FASTQ qualities are consumed (for `sample`) but not retained in [`Contig`], since tools that need
+//!   exact raw records (like `sample`) work in a streaming mode rather than via [`Contig`].
+
 use anyhow::{anyhow, Context, Result};
 use flate2::read::MultiGzDecoder;
 use std::fs::File;
@@ -6,6 +18,8 @@ use std::path::Path;
 
 /// A single contig / record
 #[derive(Debug, Clone)]
+/// A parsed record with a canonical accession (`name`), the full original header (`header`)
+/// without the leading `'>'`/`'@'`, and the uppercase biological sequence (`seq`).
 pub struct Contig {
     /// First token of the header (accession)
     pub name: String,
@@ -150,6 +164,10 @@ fn parse_fastq<R: BufRead>(mut reader: R) -> Result<Vec<Contig>> {
 }
 
 /// Read a reference/input file that may be FASTA/FASTQ and optionally gzipped.
+/// Read a file that may be FASTA/FASTQ and optionally gzipped.
+///
+/// *Format detection* is based on the first non‑empty line.
+/// Returns all records in memory for convenience.
 pub fn read_sequences<P: AsRef<Path>>(path: P) -> Result<Vec<Contig>> {
     let path_ref: &Path = path.as_ref();
     let fmt = detect_format(path_ref)?;
@@ -162,6 +180,8 @@ pub fn read_sequences<P: AsRef<Path>>(path: P) -> Result<Vec<Contig>> {
 }
 
 /// A small record for writing to FASTA
+/// Minimal view for writing FASTA output.
+/// Use this to avoid cloning sequence buffers when writing.
 pub struct FastaRecord<'a> {
     pub header: String,
     pub seq: &'a [u8],

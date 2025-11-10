@@ -1,3 +1,18 @@
+//! Sequence scrambler (`scramble`).
+//!
+//! Reads multiple **FASTA/FASTQ** files (plain or `.gz`), **loads all sequences into memory**, shuffles the global order,
+//! and writes a single FASTA. Each output header begins with a new sequential accession (`scramble_00001`), followed by
+//! `src=<original_accession>` and `file=<source_file>`, and finally the original header text.
+//!
+//! ### Memory considerations
+//! This command is explicitly **in‑memory**. Handling ≳1 Gbp of sequence is reasonable on a modern laptop, but for very
+//! large datasets consider running in batches.
+//!
+//! ### Example
+//! ```text
+//! limpet scramble input1.fa input2.fq.gz -o scrambled.fa --seed 42
+//! ```
+
 use crate::seqio::{read_sequences, write_fasta, FastaRecord};
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
@@ -20,6 +35,8 @@ pub struct ScrambleArgs {
     pub seed: Option<u64>,
 }
 
+/// Execute the `scramble` subcommand.
+/// Loads all inputs, shuffles records, rewrites headers, and writes FASTA output.
 pub fn run(args: ScrambleArgs) -> Result<()> {
     if args.inputs.is_empty() {
         return Err(anyhow!("Provide at least one input file."));

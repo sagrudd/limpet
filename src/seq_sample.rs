@@ -1,3 +1,25 @@
+//! Random interval sampler (`seq_sample`).
+//!
+//! Samples *n* sequences from random coordinates across a reference genome supplied as FASTA.
+//! Lengths are chosen uniformly in `[min, max]`. Contigs are selected **weighted by the number of valid start positions**,
+//! yielding an approximately uniform sampling over the reference coordinate space.
+//!
+//! ### N content filter
+//! Candidate fragments containing runs of `N` with length > 2 are **rejected**.
+//!
+//! ### Example
+//! ```text
+//! limpet seq_sample \\
+//!   --reference reference.fa.gz \\
+//!   --n 100 \\
+//!   --min 50 \\
+//!   --max 120 \\
+//!   --output samples.fa \\
+//!   --seed 123
+//! ```
+//!
+//! Output headers include `src=<contig>` and 1‑based inclusive coordinates: `range=10001..10120`.
+
 use crate::seqio::{read_sequences as read_fasta, write_fasta, Contig, FastaRecord};
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
@@ -47,6 +69,10 @@ fn has_long_n_run(seq: &[u8], max_run: usize) -> bool {
     false
 }
 
+/// Execute the `seq_sample` subcommand.
+///
+/// Returns an error if the input lacks contigs ≥ `min`, or if
+/// the requested parameters are inconsistent.
 pub fn run(args: SeqSampleArgs) -> Result<()> {
     if args.n == 0 {
         return Err(anyhow!("--n must be greater than 0"));

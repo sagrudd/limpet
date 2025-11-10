@@ -1,3 +1,18 @@
+//! Streaming record sampler (`sample`).
+//!
+//! Randomly pick *n* **raw records** from an input **FASTA** or **FASTQ** (optionally `.gz`) using
+//! **reservoir sampling**. Output records are written **unmodified** in the **same logical format**.
+//! If the output filename ends with `.gz`, the output is gzipped.
+//!
+//! ### Why reservoir sampling?
+//! Reservoir sampling uses *O(n)* memory (for your requested sample size) and *O(1)* extra work per record,
+//! enabling fair sampling without a prior pass to count records.
+//!
+//! ### Example
+//! ```text
+//! limpet sample --input reads.fastq.gz --n 10000 --output subset.fastq.gz --seed 123
+//! ```
+
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
 use flate2::write::GzEncoder;
@@ -145,6 +160,8 @@ fn read_fastq_record<R: BufRead>(rdr: &mut R) -> Result<Option<String>> {
     Ok(Some(raw))
 }
 
+/// Execute the `sample` subcommand.
+/// Streams input, performs reservoir sampling, and writes output in matching format.
 pub fn run(args: SampleArgs) -> Result<()> {
     if args.n == 0 {
         return Err(anyhow!("--n must be greater than 0"));

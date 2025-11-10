@@ -1,3 +1,13 @@
+//! Header reducer (`strip`).
+//!
+//! Accepts a **single FASTA** (plain or `.gz`) and writes a FASTA where each header is reduced to just
+//! the **accession** (first whitespace‑separated token). Sequence content is unchanged.
+//!
+//! ### Example
+//! ```text
+//! limpet strip --input reference.fa.gz --output reference_accessions.fa
+//! ```
+
 use crate::seqio::{read_sequences, write_fasta, FastaRecord};
 use anyhow::{anyhow, Context, Result};
 use clap::Args;
@@ -15,6 +25,8 @@ pub struct StripArgs {
     pub output: PathBuf,
 }
 
+/// Execute the `strip` subcommand.
+/// Reduces headers to accession tokens and writes FASTA.
 pub fn run(args: StripArgs) -> Result<()> {
     // Load sequences (FASTA or FASTA.GZ). read_sequences will also parse FASTQ, but this
     // command is intended for FASTA; we simply use the accession token `name` for headers.
